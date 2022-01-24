@@ -23,6 +23,7 @@ const req = https.request(options, (res) => {
 
   res.on("end", () => {
     let urls = [];
+    output = output.split('<div class="trending"')[1];
     const srcSplitUp = output.match(/<figure>([\s\S]*?)figure>/g);
     srcSplitUp.forEach((src) => {
       const obj = {};
@@ -47,9 +48,8 @@ const req = https.request(options, (res) => {
 req.on("error", (err) => {
   console.error(err);
 });
-
 req.end();
-const port = process.env.PORT || "5000";
+const port = "5000";
 
 http
   .createServer((req, res) => {
