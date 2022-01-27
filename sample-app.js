@@ -23,18 +23,29 @@ const req = https.request(options, (res) => {
 
   res.on("end", () => {
     let urls = [];
-    output = output.split('<div class="trending"')[1];
-    const srcSplitUp = output.match(/<figure>([\s\S]*?)figure>/g);
-    srcSplitUp.forEach((src) => {
+    output = output.split(
+      '<h2 class="latest-stories__heading">Latest Stories</h2>'
+    )[1];
+
+    const srcSplitUp = output.match(/<ul>([\s\S]*?)ul>/g);
+    const source = srcSplitUp[0].match(/<li([\s\S]*?)li>/g);
+    source.forEach((src) => {
       const obj = {};
       const aFind = src.match(/<a href([\s\S]*?)>/g);
-      obj.link = aFind[0].replace(/(<a href=|>)/g, "");
+      obj.link = aFind[0].replace(/(<a href="|>)/g, "");
+      obj.link = obj.link.replace('\"', '');
       if (obj.link.startsWith("/")) {
         obj.link = "https://time.com" + obj.link;
       }
-      const imgSplit = src.match(/<img[^>]*>/g);
-      const alt = imgSplit[0].match(/alt=[^>]*"/g);
-      obj.title = alt[0].replace(/(alt=|")/g, "");
+      var tit = src.match(
+        /<h3 class="latest-stories__item-headline">([\s\S]*?)h3>/g
+      );
+      console.log(tit);
+      tit = tit[0].replace('<h3 class="latest-stories__item-headline">', "");
+      tit = tit.replace("</h3>", "");
+      tit = tit.replace("<em>", "");
+      tit = tit.replace("</em>", "");
+      obj.title = tit;
       urls.push(obj);
     });
     finalData = urls
