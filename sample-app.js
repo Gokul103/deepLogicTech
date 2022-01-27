@@ -32,20 +32,20 @@ const req = https.request(options, (res) => {
     source.forEach((src) => {
       const obj = {};
       const aFind = src.match(/<a href([\s\S]*?)>/g);
-      obj.link = aFind[0].replace(/(<a href="|>)/g, "");
-      obj.link = obj.link.replace('\"', '');
-      if (obj.link.startsWith("/")) {
-        obj.link = "https://time.com" + obj.link;
+      var url = aFind[0].replace(/(<a href="|>)/g, "");
+      url = url.replace('"', "");
+      if (url.startsWith("/")) {
+        url = "https://time.com" + url;
       }
       var tit = src.match(
         /<h3 class="latest-stories__item-headline">([\s\S]*?)h3>/g
       );
-      console.log(tit);
       tit = tit[0].replace('<h3 class="latest-stories__item-headline">', "");
       tit = tit.replace("</h3>", "");
       tit = tit.replace("<em>", "");
       tit = tit.replace("</em>", "");
       obj.title = tit;
+      obj.link = url;
       urls.push(obj);
     });
     finalData = urls
