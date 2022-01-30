@@ -1,7 +1,7 @@
 const https = require("https");
 const http = require("http");
 
-let finalData = "";
+let jsonArray = [];
 
 const options = {
   host: "time.com",
@@ -22,37 +22,7 @@ const req = https.request(options, (res) => {
   });
 
   res.on("end", () => {
-    let urls = [];
-    output = output.split(
-      '<h2 class="latest-stories__heading">Latest Stories</h2>'
-    )[1];
-
-    const srcSplitUp = output.match(/<ul>([\s\S]*?)ul>/g);
-    const source = srcSplitUp[0].match(/<li([\s\S]*?)li>/g);
-    source.forEach((src) => {
-      const obj = {};
-      const aFind = src.match(/<a href([\s\S]*?)>/g);
-      var url = aFind[0].replace(/(<a href="|>)/g, "");
-      url = url.replace('"', "");
-      if (url.startsWith("/")) {
-        url = "https://time.com" + url;
-      }
-      var tit = src.match(
-        /<h3 class="latest-stories__item-headline">([\s\S]*?)h3>/g
-      );
-      tit = tit[0].replace('<h3 class="latest-stories__item-headline">', "");
-      tit = tit.replace("</h3>", "");
-      tit = tit.replace("<em>", "");
-      tit = tit.replace("</em>", "");
-      obj.title = tit;
-      obj.link = url;
-      urls.push(obj);
-    });
-    finalData = urls
-      .filter((each) => {
-        return each.title;
-      })
-      .splice(0, 5);
+    jsonArray = parseData();
   });
 });
 
@@ -66,9 +36,77 @@ http
   .createServer((req, res) => {
     if (req.url === "/getTimeStories") {
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(finalData));
+      res.end(JSON.stringify(jsonArray));
     } else res.end("Please pass correct URL");
   })
   .listen(port, () => {
     console.log("Server is listing in port " + port);
   });
+
+/**
+ * Function to convert HTML to JSON
+ * @returns JSON data from the latest stories section
+ */
+function parseData() {
+  var index = findIndex("latest-stories__heading"),
+    result = [];
+  for (var i = 0; i < 5; i++) {
+    var json = { title: "", link: "https://time.com" },
+      toFind = '<a href="';
+    (start = findIndex(toFind, index)), (end = findIndex('">', start));
+    json.link += getInbetweenText(start + toFind.length, end);
+
+    toFind = '<h3 class="latest-stories__item-headline">';
+    start = findIndex(toFind, end);
+    end = findIndex("</h3>", start);
+    json.title = getInbetweenText(start + toFind.length, end);
+
+    index = end;
+    result[i] = json;
+  }
+  return result;
+}
+
+/**
+ * Function to find the string index
+ * @param {String} toFind String to be found
+ * @param {Integer} afterIndex Find the string after this index
+ * @returns Index of the string from the data
+ */
+function findIndex(toFind, afterIndex) {
+  var iteration = 0,
+    index = 0;
+  if (afterIndex) iteration = afterIndex;
+
+  while (iteration !== output.length) {
+    var splitString = "";
+    for (var i = iteration; i < iteration + toFind.length; i++) {
+      splitString += output[i];
+    }
+
+    if (splitString === toFind) {
+      if (afterIndex && afterIndex > iteration) {
+        iteration++;
+        continue;
+      }
+      index = iteration;
+      break;
+    }
+    iteration++;
+  }
+  return index;
+}
+
+/**
+ * Function to find the string in between the given indexes
+ * @param {Integer} start Starting index
+ * @param {Integer} end Ending index
+ * @returns
+ */
+function getInbetweenText(start, end) {
+  var returnString = "";
+  for (var j = start; j < end; j++) {
+    returnString += output[j];
+  }
+  return returnString;
+}
